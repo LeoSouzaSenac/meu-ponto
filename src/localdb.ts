@@ -1,0 +1,5 @@
+import type {Store} from './engine';
+const DB='meu-ponto-offline'; const KEY='dados';
+function openDb():Promise<IDBDatabase>{return new Promise((resolve,reject)=>{const req=indexedDB.open(DB,1);req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains('app'))req.result.createObjectStore('app');};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});}
+export async function readLocalStore():Promise<Store|null>{try{const db=await openDb();return await new Promise(resolve=>{const req=db.transaction('app','readonly').objectStore('app').get(KEY);req.onsuccess=()=>{db.close();resolve(req.result??null)};req.onerror=()=>{db.close();resolve(null)};});}catch{return null;}}
+export async function writeLocalStore(store:Store):Promise<void>{try{const db=await openDb();await new Promise<void>((resolve,reject)=>{const transaction=db.transaction('app','readwrite');transaction.objectStore('app').put(store,KEY);transaction.oncomplete=()=>resolve();transaction.onerror=()=>reject(transaction.error);});db.close();}catch(e){console.error('Falha ao salvar no IndexedDB',e);}}
